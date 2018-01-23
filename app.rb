@@ -1,70 +1,6 @@
-require 'httparty'
 require 'linkeddata'
-
-class Codex
-  include HTTParty
-  
-  base_uri 'codex.opendata.api.vlaanderen.be'
-
-  def documents(skip = 0, take = 20)
-    self.class.get("/api/WetgevingDocument?skip=#{skip}&take=#{take}")
-  end  
-
-  def document(id)
-    self.class.get("/api/WetgevingDocument/#{id}/VolledigDocument")
-  end
-
-  def isValidBesluit(document)
-    type = document["WetgevingDocumentType"].downcase
-    type.include?("besluit") || type.include?("reglement") || type.include?("decreet")
-  end
-end
-
-class SemanticModelGenerator
-  CODEX = RDF::Vocabulary.new("http://codex.opendata.api.vlaanderen.be/api/")
-  BESLUIT = RDF::Vocabulary.new("http://data.vlaanderen.be/ns/besluit#")
-  ELI = RDF::Vocabulary.new("http://data.europa.eu/eli/ontology#")
-
-  def initialize(graph)
-    @graph = graph
-  end
-  
-  def insert_besluit(document)
-    subject = RDF::URI(document["Link"]["Href"])
-
-    id = document["Id"]
-    date = document["Datum"][0, 10] # "YYYY-MM-DD" substring
-    title = "#{document["WetgevingDocumentType"]} #{document["Opschrift"]}".strip
-    doc_type = document["WetgevingDocumentType"].gsub " ", "_"
-
-    match = title.match(/\(citeeropschrift: \"(.*)\"\)/)
-    citeeropschrift = if match then match[1] else title end
-
-    @graph << RDF.Statement(subject, RDF.type, BESLUIT.Besluit)
-    @graph << RDF.Statement(subject, ELI["date_publication"], RDF::Literal.new(date, datatype: RDF::XSD.date))
-    @graph << RDF.Statement(subject, ELI.title, title)
-    @graph << RDF.Statement(subject, ELI["title_short"], citeeropschrift)
-    # TODO replace documentType URI
-    @graph << RDF.Statement(subject, ELI["type_document"], CODEX["WetgevingDocumentType/#{doc_type}"])
-    @graph << RDF.Statement(subject, ELI.language, RDF::URI.new("http://publications.europa.eu/resource/authority/language/NLD"))
-    @graph << RDF.Statement(subject, RDF::RDFS.seeAlso, RDF::URI.new("https://codex.vlaanderen.be/Zoeken/Document.aspx?DID=#{id}&param=inhoud"))
-  end
-
-  def enrich_besluit(document_detail)
-    document = document_detail["Document"]
-    subject = RDF::URI(document["Link"]["Href"])
-
-    if document["StartDatum"]
-      startDate = document["StartDatum"][0, 10] # "YYYY-MM-DD" substring
-      @graph << RDF.Statement(subject, ELI["first_date_entry_in_force"], RDF::Literal.new(startDate, datatype: RDF::XSD.date))
-    end
-    if document["EindDatum"]
-      endDate = document["EindDatum"][0, 10] # "YYYY-MM-DD" substring
-      @graph << RDF.Statement(subject, ELI["date_no_longer_in_force"], RDF::Literal.new(endDate, datatype: RDF::XSD.date))
-    end
-  end
-end
-
+require_relative './lib/codex'
+require_relative './lib/semantic-model-generator'
 
 puts "Start harvesting Vlaamse Codex"
 
@@ -76,21 +12,21 @@ codex = Codex.new
 graph = RDF::Graph.new
 generator = SemanticModelGenerator.new(graph)
 
-count = 0
-skip = 0
-take = 10
-total = 1
+count = 0; skip = 0; take = 10; total = 1
 
+# Go through all document pages
 while skip < total
   puts "Get documents [#{skip}-#{skip + take}]"
   documents_list = codex.documents(skip, take)
   total = documents_list["TotaalAantal"]
 
+  # Handle each document on a page
   documents_list["ResultatenLijst"].each do |document|
     if codex.isValidBesluit(document)
       count += 1
       generator.insert_besluit(document)
 
+      # Add additional document information if enabled
       if (enable_detail)
         detail = codex.document(document["Id"])
         generator.enrich_besluit(detail)
