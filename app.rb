@@ -32,6 +32,7 @@ class SemanticModelGenerator
   def insert_besluit(document)
     subject = RDF::URI(document["Link"]["Href"])
 
+    id = document["Id"]
     date = document["Datum"][0, 10] # "YYYY-MM-DD" substring
     title = "#{document["WetgevingDocumentType"]} #{document["Opschrift"]}".strip
     doc_type = document["WetgevingDocumentType"].gsub " ", "_"
@@ -45,7 +46,8 @@ class SemanticModelGenerator
     @graph << RDF.Statement(subject, ELI["title_short"], citeeropschrift)
     # TODO replace documentType URI
     @graph << RDF.Statement(subject, ELI["type_document"], CODEX["WetgevingDocumentType/#{doc_type}"])
-    @graph << RDF.Statement(subject, ELI.language, RDF::URI.new("http://publications.europa.eu/resource/authority/language/NLD"))        
+    @graph << RDF.Statement(subject, ELI.language, RDF::URI.new("http://publications.europa.eu/resource/authority/language/NLD"))
+    @graph << RDF.Statement(subject, RDF::RDFS.seeAlso, RDF::URI.new("https://codex.vlaanderen.be/Zoeken/Document.aspx?DID=#{id}&param=inhoud"))
   end
 
   def enrich_besluit(document_detail)
