@@ -5,8 +5,8 @@ class SemanticModelGenerator
   BESLUIT = RDF::Vocabulary.new("http://data.vlaanderen.be/ns/besluit#")
   ELI = RDF::Vocabulary.new("http://data.europa.eu/eli/ontology#")
 
-  def initialize(graph)
-    @graph = graph
+  def initialize
+    @graph = RDF::Graph.new
   end
   
   def insert_besluit(document)
@@ -42,5 +42,11 @@ class SemanticModelGenerator
       endDate = document["EindDatum"][0, 10] # "YYYY-MM-DD" substring
       @graph << RDF.Statement(subject, ELI["date_no_longer_in_force"], RDF::Literal.new(endDate, datatype: RDF::XSD.date))
     end
+  end
+
+  def write_ttl_to_file(file)
+    RDF::Writer.open(file) { |writer| writer << @graph }
+    # graph.to_ttl
+    # puts ttl
   end
 end

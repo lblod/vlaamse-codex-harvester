@@ -9,8 +9,7 @@ puts "Start harvesting Vlaamse Codex"
 enable_detail = false
 
 codex = Codex.new
-graph = RDF::Graph.new
-generator = SemanticModelGenerator.new(graph)
+generator = SemanticModelGenerator.new
 
 count = 0; skip = 0; take = 10; total = 1
 
@@ -40,6 +39,4 @@ end
 
 puts "#{count}/#{total} documents harvested"
 
-RDF::Writer.open("output/output.ttl") { |writer| writer << graph }
-# graph.to_ttl
-# puts ttl
+generator.write_ttl_to_file "output/output.ttl"
