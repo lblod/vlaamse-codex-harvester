@@ -10,7 +10,7 @@ class SemanticModelGenerator
   def initialize
     @graph = RDF::Graph.new
   end
-  
+
   def insert_besluit(document)
     subject = RDF::URI(document["Link"]["Href"])
 
@@ -30,6 +30,8 @@ class SemanticModelGenerator
     @graph << RDF.Statement(subject, ELI["type_document"], CODEX["WetgevingDocumentType/#{doc_type}"])
     @graph << RDF.Statement(subject, ELI.language, LANG_NL)
     @graph << RDF.Statement(subject, RDF::Vocab::FOAF.page, RDF::URI.new("https://codex.vlaanderen.be/Zoeken/Document.aspx?DID=#{id}&param=inhoud"))
+
+    { id: id, uri: subject }
   end
 
   def enrich_besluit(document_detail)
@@ -44,8 +46,25 @@ class SemanticModelGenerator
       endDate = document["EindDatum"][0, 10] # "YYYY-MM-DD" substring
       @graph << RDF.Statement(subject, ELI["date_no_longer_in_force"], RDF::Literal.new(endDate, datatype: RDF::XSD.date))
     end
+
+    { id: document["Id"], uri: subject }    
   end
 
+  def insert_article(article, besluit)
+    subject = RDF::URI(article["Link"]["Href"])
+
+    id = article["Id"]
+    
+    @graph << RDF.Statement(subject, RDF.type, BESLUIT.Artikel)
+    @graph << RDF.Statement(subject, ELI.title, "Artikel #{article["Titel"]}".strip)
+    @graph << RDF.Statement(subject, ELI.number, article["Titel"])
+    @graph << RDF.Statement(subject, ELI.language, LANG_NL)
+    @graph << RDF.Statement(subject, ELI["is_part_of"], besluit[:uri])
+    @graph << RDF.Statement(subject, RDF::Vocab::FOAF.page, RDF::URI.new("https://codex.vlaanderen.be/Zoeken/Document.aspx?DID=#{besluit[:id]}&param=inhoud&AID=#{id}"))
+
+    { id: id, uri: subject }
+  end
+  
   def write_ttl_to_file(file)
     RDF::Writer.open(file) { |writer| writer << @graph }
     # graph.to_ttl

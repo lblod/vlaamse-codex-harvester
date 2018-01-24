@@ -13,6 +13,10 @@ class Codex
     self.class.get("/api/WetgevingDocument/#{id}/VolledigDocument")
   end
 
+  def document_structure(id)
+    self.class.get("/api/WetgevingDocument/#{id}/Structuur?includeArtikelen=true")
+  end
+
   def isValidBesluit(document)
     type = document["WetgevingDocumentType"].downcase
     type.include?("besluit") || type.include?("reglement") || type.include?("decreet")

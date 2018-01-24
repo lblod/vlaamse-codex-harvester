@@ -1,42 +1,19 @@
-require 'linkeddata'
-require_relative './lib/codex'
-require_relative './lib/semantic-model-generator'
-
-puts "Start harvesting Vlaamse Codex"
+require_relative './lib/harvester'
 
 # Enable the retrieval of additional details of a document
 # This requires an additional call per document
-enable_detail = false
+enable_detail = true
 
-codex = Codex.new
-generator = SemanticModelGenerator.new
+# Enable the retrieval of articles related to documents
+# This requires an additional call per document
+enable_articles = true
 
-count = 0; skip = 0; take = 10; total = 1
+# Enable to retrieve only 1 page of documents instead of all pages
+# This will limit the duration of the script
+only_once = false
 
-# Go through all document pages
-while skip < total
-  puts "Get documents [#{skip}-#{skip + take}]"
-  documents_list = codex.documents(skip, take)
-  total = documents_list["TotaalAantal"]
+harvester = Harvester.new(enable_detail, enable_articles, only_once)
+harvester.harvest
 
-  # Handle each document on a page
-  documents_list["ResultatenLijst"].each do |document|
-    if codex.isValidBesluit(document)
-      count += 1
-      generator.insert_besluit(document)
 
-      # Add additional document information if enabled
-      if (enable_detail)
-        detail = codex.document(document["Id"])
-        generator.enrich_besluit(detail)
-      end
-    end
-  end
 
-  skip += take
-  skip = total # TODO remove
-end
-
-puts "#{count}/#{total} documents harvested"
-
-generator.write_ttl_to_file "output/output.ttl"
