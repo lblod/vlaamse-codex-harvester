@@ -5,6 +5,8 @@ class SemanticModelGenerator
   BESLUIT = RDF::Vocabulary.new("http://data.vlaanderen.be/ns/besluit#")
   ELI = RDF::Vocabulary.new("http://data.europa.eu/eli/ontology#")
 
+  LANG_NL = RDF::URI.new("http://publications.europa.eu/resource/authority/language/NLD")
+
   def initialize
     @graph = RDF::Graph.new
   end
@@ -24,10 +26,10 @@ class SemanticModelGenerator
     @graph << RDF.Statement(subject, ELI["date_publication"], RDF::Literal.new(date, datatype: RDF::XSD.date))
     @graph << RDF.Statement(subject, ELI.title, title)
     @graph << RDF.Statement(subject, ELI["title_short"], citeeropschrift)
-    # TODO replace documentType URI
+    # TODO replace with correct documentType URI
     @graph << RDF.Statement(subject, ELI["type_document"], CODEX["WetgevingDocumentType/#{doc_type}"])
-    @graph << RDF.Statement(subject, ELI.language, RDF::URI.new("http://publications.europa.eu/resource/authority/language/NLD"))
-    @graph << RDF.Statement(subject, RDF::RDFS.seeAlso, RDF::URI.new("https://codex.vlaanderen.be/Zoeken/Document.aspx?DID=#{id}&param=inhoud"))
+    @graph << RDF.Statement(subject, ELI.language, LANG_NL)
+    @graph << RDF.Statement(subject, RDF::Vocab::FOAF.page, RDF::URI.new("https://codex.vlaanderen.be/Zoeken/Document.aspx?DID=#{id}&param=inhoud"))
   end
 
   def enrich_besluit(document_detail)
