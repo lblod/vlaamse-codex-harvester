@@ -2,8 +2,12 @@
 
 ## Running the LOD harvester
 This script harvests the data from the Vlaamse Codex LOD SPARQL endpoint.
+```
+cd ./lod
+docker run --rm --name codex-harvester -v "$PWD":/app -e NODE_ENV=development semtech/mu-javascript-template:1.3.2
+```
 
-
+The output will be written to `./lod/output/output.ttl`.
 
 ## Running the JSON harvester
 This script harvests the data from the Vlaamse Codex API at http://codex.opendata.api.vlaanderen.be.
