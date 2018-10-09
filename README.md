@@ -27,7 +27,7 @@ The script can be configured in `json-api/app.rb`. Currently the following optio
 * **enable_articles** _(default: true)_: enable the retrieval of articles of a document. This requires an additonal request per document. 
 * **only_once** _(default: false)_: enable to retrieve only 1 page of documents instead of all pages. This option may be handy during development.
 
-## Developing the script
+### Developing the script
 
 Start a Docker container:
 ```
