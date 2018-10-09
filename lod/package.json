@@ -1,0 +1,11 @@
+{
+  "name": "vlaamse-codex-lod-harvester",
+  "version": "0.1.0",
+  "description": "Harvester for Vlaamse Codex LOD",
+  "dependencies": {
+    "fs-extra": "^5.0.0",
+    "request": "^2.85.0"
+  },
+  "author": "redpencil.io",
+  "license": "MIT"
+}
